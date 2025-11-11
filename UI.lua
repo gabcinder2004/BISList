@@ -534,31 +534,36 @@ function BISListUI:BuildContentBySource()
         end
     end
 
-    -- Sort source names alphabetically
+    -- Sort sources by item count (most items first), then alphabetically
     local sortedSources = {}
-    for sourceName, _ in pairs(sourceGroups) do
-        table.insert(sortedSources, sourceName)
+    for sourceName, items in pairs(sourceGroups) do
+        table.insert(sortedSources, {name = sourceName, count = table.getn(items)})
     end
-    table.sort(sortedSources)
+    table.sort(sortedSources, function(a, b)
+        if a.count == b.count then
+            return a.name < b.name  -- Alphabetical if same count
+        end
+        return a.count > b.count  -- Most items first
+    end)
 
-    -- Split into two columns
+    -- Split into two columns, alternating row-by-row (not column-by-column)
     local leftYOffset = -10
     local rightYOffset = -10
     local maxHeight = 0
-    local sourceIndex = 0
 
-    for _, sourceName in ipairs(sortedSources) do
+    for sourceIndex, sourceData in ipairs(sortedSources) do
+        local sourceName = sourceData.name
         local items = sourceGroups[sourceName]
-        sourceIndex = sourceIndex + 1
 
         local sourceFrame
-        if sourceIndex <= math.ceil(table.getn(sortedSources) / 2) then
-            -- Left column
+        -- Odd indices go left, even indices go right (row-by-row layout)
+        if math.mod(sourceIndex, 2) == 1 then
+            -- Left column (odd: 1st, 3rd, 5th, etc.)
             sourceFrame = self:CreateSourceFrame(scrollChild, sourceName, items, 10, leftYOffset, columnWidth)
             leftYOffset = leftYOffset - sourceFrame:GetHeight() - 5
             maxHeight = math.max(maxHeight, math.abs(leftYOffset))
         else
-            -- Right column
+            -- Right column (even: 2nd, 4th, 6th, etc.)
             sourceFrame = self:CreateSourceFrame(scrollChild, sourceName, items, columnWidth + 20, rightYOffset, columnWidth)
             rightYOffset = rightYOffset - sourceFrame:GetHeight() - 5
             maxHeight = math.max(maxHeight, math.abs(rightYOffset))
@@ -566,7 +571,8 @@ function BISListUI:BuildContentBySource()
         table.insert(contentFrames, sourceFrame)
     end
 
-    scrollChild:SetHeight(maxHeight + 20)
+    -- Ensure scroll height is sufficient (minimum 500 to enable scrolling)
+    scrollChild:SetHeight(math.max(maxHeight + 20, 500))
 end
 
 -- Create a frame for one source group (dungeon/raid)

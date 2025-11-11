@@ -26,6 +26,12 @@ function BISListContextMenu:GetItemSlot(itemLink)
         return nil
     end
 
+    -- INVTYPE_WEAPON means one-hand weapon that can go in EITHER main hand or off hand
+    -- Return nil to trigger slot selection dialog
+    if itemEquipLoc == "INVTYPE_WEAPON" then
+        return nil
+    end
+
     -- Map itemEquipLoc to slot IDs
     local slotMap = {
         ["INVTYPE_HEAD"] = 1,
@@ -42,7 +48,6 @@ function BISListContextMenu:GetItemSlot(itemLink)
         ["INVTYPE_FINGER"] = 11,
         ["INVTYPE_TRINKET"] = 13,
         ["INVTYPE_CLOAK"] = 15,
-        ["INVTYPE_WEAPON"] = 16,
         ["INVTYPE_2HWEAPON"] = 16,
         ["INVTYPE_WEAPONMAINHAND"] = 16,
         ["INVTYPE_WEAPONOFFHAND"] = 17,

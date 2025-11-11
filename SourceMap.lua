@@ -1,6 +1,6 @@
 -- Auto-generated source mapping from AtlasLoot TableRegister
 -- Maps AtlasLoot table IDs to dungeon/raid names (not boss names)
--- Total mappings: 639
+-- Total mappings: 641
 
 BISListSourceMap = {
     -- Abyssal Council
@@ -146,6 +146,7 @@ BISListSourceMap = {
     ["DMNGuardSlipkik"] = "Dire Maul (North)",
     ["DMNKingGordok"] = "Dire Maul (North)",
     ["DMNStomperKreeg"] = "Dire Maul (North)",
+    ["DMNTRIBUTERUN"] = "Dire Maul (North)",
     ["DMNThimblejack"] = "Dire Maul (North)",
     ["DMNTrash"] = "Dire Maul (North)",
 
@@ -532,6 +533,7 @@ BISListSourceMap = {
 
     -- Stratholme
     ["STRATArchivistGalford"] = "Stratholme",
+    ["STRATAtiesh"] = "Stratholme",
     ["STRATBSPlansCorruption"] = "Stratholme",
     ["STRATBSPlansSerenity"] = "Stratholme",
     ["STRATBalnazzar"] = "Stratholme",
