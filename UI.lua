@@ -438,11 +438,13 @@ function BISListUI:BuildContentBySlot()
     local leftYOffset = -10
     local rightYOffset = -10
     local maxHeight = 0
+    local hasItems = false
 
     for i, slot in ipairs(BISList.Slots) do
         -- Skip empty slots
         local items = BISList.Data[slot.id] or {}
         if table.getn(items) > 0 then
+            hasItems = true
             local slotFrame
             if i <= 8 then
                 -- Left column
@@ -457,6 +459,12 @@ function BISListUI:BuildContentBySlot()
             end
             table.insert(contentFrames, slotFrame)
         end
+    end
+
+    -- Show empty state message if no items
+    if not hasItems then
+        self:ShowEmptyStateMessage(scrollChild)
+        maxHeight = 200
     end
 
     scrollChild:SetHeight(maxHeight + 20)
@@ -569,6 +577,12 @@ function BISListUI:BuildContentBySource()
             maxHeight = math.max(maxHeight, math.abs(rightYOffset))
         end
         table.insert(contentFrames, sourceFrame)
+    end
+
+    -- Show empty state message if no items
+    if table.getn(sortedSources) == 0 then
+        self:ShowEmptyStateMessage(scrollChild)
+        maxHeight = 200
     end
 
     -- Ensure scroll height is sufficient (minimum 500 to enable scrolling)
@@ -903,6 +917,32 @@ function BISListUI:CreateItemFrame(parent, slotId, item, yOffset, width)
     end)
 
     return itemFrame
+end
+
+-- Show empty state message with instructions
+function BISListUI:ShowEmptyStateMessage(parent)
+    local messageFrame = CreateFrame("Frame", nil, parent)
+    messageFrame:SetPoint("TOP", parent, "TOP", 0, -100)
+    messageFrame:SetWidth(650)
+    messageFrame:SetHeight(180)
+
+    -- Title
+    local title = messageFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", messageFrame, "TOP", 0, 0)
+    title:SetText("|cffffffffNo Items in List|r")
+
+    -- Instructions
+    local instructions = messageFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    instructions:SetPoint("TOP", title, "BOTTOM", 0, -20)
+    instructions:SetWidth(600)
+    instructions:SetJustifyH("CENTER")
+    instructions:SetText("|cffaaaaaa" ..
+        "1. Ensure you have set a keybind in ESC > Key Bindings > BISList.\n\n" ..
+        "2. Hover over any item.\n\n" ..
+        "3. Use customized keybinding to add item to currently selected list." ..
+        "|r")
+
+    table.insert(contentFrames, messageFrame)
 end
 
 -- Update the stats display
