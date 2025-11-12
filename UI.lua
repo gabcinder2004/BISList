@@ -501,7 +501,8 @@ function BISListUI:ParseSourceName(sourceInfo, itemId)
     end
 
     -- Extract dataID from sourceInfo (format: "dataID|dataSource")
-    local dataID, dataSource = string.match(sourceInfo, "([^|]+)|?([^|]*)")
+    -- Use string.find for Lua 5.0 compatibility (WoW 1.12.1)
+    local _, _, dataID, dataSource = string.find(sourceInfo, "([^|]+)|?([^|]*)")
 
     -- Use the global sourceMap from SourceMap.lua
     if BISListSourceMap and BISListSourceMap[dataID] then
