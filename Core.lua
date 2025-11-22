@@ -18,6 +18,7 @@ BISList.Slots = {
     {id = 11, name = "Finger"},
     {id = 13, name = "Trinket"},
     {id = 16, name = "Main Hand"},
+    {id = 19, name = "One-Hand"},
     {id = 17, name = "Off Hand"},
     {id = 18, name = "Ranged"},
 }
@@ -231,6 +232,7 @@ function BISList:MoveItemToList(slotId, itemId, targetListName)
 
     -- Find the item in current list
     local itemData = nil
+    if not self.Data[slotId] then return false end
     for i, item in ipairs(self.Data[slotId]) do
         if item.itemId == itemId then
             itemData = item
@@ -267,6 +269,11 @@ function BISList:AddItem(itemLink, slotId, itemName, sourceInfo)
         return false
     end
 
+    -- Initialize slot if it doesn't exist (for newly added slots like One-Hand)
+    if not self.Data[slotId] then
+        self.Data[slotId] = {}
+    end
+
     -- Check if item already exists in this slot
     for _, item in ipairs(self.Data[slotId]) do
         if item.itemId == itemId then
@@ -301,6 +308,7 @@ end
 
 -- Remove an item from a slot
 function BISList:RemoveItem(slotId, itemId)
+    if not self.Data[slotId] then return false end
     for i, item in ipairs(self.Data[slotId]) do
         if item.itemId == itemId then
             table.remove(self.Data[slotId], i)
@@ -395,10 +403,12 @@ function BISList:CheckItemAcquired(slotId, itemId)
     end
 
     -- Update the data
-    for _, item in ipairs(self.Data[slotId]) do
-        if item.itemId == itemId then
-            item.acquired = acquired
-            break
+    if self.Data[slotId] then
+        for _, item in ipairs(self.Data[slotId]) do
+            if item.itemId == itemId then
+                item.acquired = acquired
+                break
+            end
         end
     end
 

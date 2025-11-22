@@ -46,11 +46,10 @@ function BISListContextMenu:GetItemSlot(itemLink)
         return nil
     end
 
-    -- INVTYPE_WEAPON means one-hand weapon that can go in EITHER main hand or off hand
-    -- Return nil to trigger slot selection dialog
+    -- INVTYPE_WEAPON means one-hand weapon - use dedicated One-Hand slot (19)
     if itemEquipLoc == "INVTYPE_WEAPON" then
-        DebugLog("GetItemSlot: INVTYPE_WEAPON detected, needs slot selection")
-        return nil
+        DebugLog("GetItemSlot: INVTYPE_WEAPON detected, using One-Hand slot")
+        return 19
     end
 
     -- Map itemEquipLoc to slot IDs
@@ -123,6 +122,53 @@ function BISListContextMenu:ShowSlotSelectionDialog(itemLink)
     }
 
     StaticPopup_Show("BISLIST_SELECT_SLOT")
+end
+
+-- Show weapon slot selection dialog (Main Hand / Off Hand)
+-- Used for INVTYPE_WEAPON items that can go in either hand
+local pendingWeaponItemLink = nil
+local pendingWeaponItemName = nil
+local pendingWeaponSourceInfo = nil
+
+function BISListContextMenu:ShowWeaponSlotDialog(itemLink, itemName, sourceInfo)
+    pendingWeaponItemLink = itemLink
+    pendingWeaponItemName = itemName
+    pendingWeaponSourceInfo = sourceInfo
+
+    StaticPopupDialogs["BISLIST_WEAPON_SLOT"] = {
+        text = "Select slot for one-hand weapon:",
+        button1 = "Main Hand",
+        button2 = "Off Hand",
+        button3 = "Cancel",
+        OnAccept = function()
+            -- Main Hand (slot 16)
+            local itemId = BISList:GetItemIdFromLink(pendingWeaponItemLink)
+            if itemId then
+                BISList:AddItem(pendingWeaponItemLink, 16, pendingWeaponItemName, pendingWeaponSourceInfo)
+                if BISListUI and BISListUI.Refresh and BISListUI:IsVisible() then
+                    BISListUI:Refresh()
+                end
+            end
+        end,
+        OnCancel = function()
+            -- Off Hand (slot 17)
+            local itemId = BISList:GetItemIdFromLink(pendingWeaponItemLink)
+            if itemId then
+                BISList:AddItem(pendingWeaponItemLink, 17, pendingWeaponItemName, pendingWeaponSourceInfo)
+                if BISListUI and BISListUI.Refresh and BISListUI:IsVisible() then
+                    BISListUI:Refresh()
+                end
+            end
+        end,
+        OnAlt = function()
+            -- Cancel - do nothing
+        end,
+        timeout = 0,
+        whileDead = 1,
+        hideOnEscape = 1
+    }
+
+    StaticPopup_Show("BISLIST_WEAPON_SLOT")
 end
 
 -- Add item to a specific slot with notes dialog
@@ -505,7 +551,32 @@ function BISList_AddHoveredItem()
                 DebugLog("ERROR: Could not extract item ID from link")
             end
         else
-            DebugLog("ERROR: GetItemSlot returned nil - cannot determine slot")
+            -- Check if it's a one-hand weapon (INVTYPE_WEAPON) that needs slot selection
+            local itemId = BISList:GetItemIdFromLink(lastHoveredItemLink)
+            if itemId then
+                local _, _, _, _, _, _, _, itemEquipLoc = GetItemInfo(itemId)
+                if itemEquipLoc == "INVTYPE_WEAPON" then
+                    DebugLog("One-hand weapon detected, showing slot selection dialog")
+                    -- Get item name for the dialog
+                    local itemName = lastHoveredItemName
+                    if not itemName or itemName == "" or string.find(itemName, "^item:") then
+                        if AtlasLootTooltip and AtlasLootTooltip:IsVisible() and AtlasLootTooltipTextLeft1 then
+                            itemName = AtlasLootTooltipTextLeft1:GetText()
+                        end
+                        if not itemName or itemName == "" then
+                            local cachedName = GetItemInfo(itemId)
+                            if cachedName then
+                                itemName = cachedName
+                            end
+                        end
+                    end
+                    BISListContextMenu:ShowWeaponSlotDialog(lastHoveredItemLink, itemName, lastHoveredSourceInfo)
+                else
+                    DebugLog("ERROR: GetItemSlot returned nil - cannot determine slot (equipLoc: " .. tostring(itemEquipLoc) .. ")")
+                end
+            else
+                DebugLog("ERROR: GetItemSlot returned nil - cannot determine slot")
+            end
         end
     else
         DebugLog("ERROR: No item link captured (lastHoveredItemLink is nil)")
