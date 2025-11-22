@@ -368,65 +368,67 @@ updateFrame:SetScript("OnUpdate", function()
 
         if mouseFocus then
             local rawID = nil
+            local itemID = nil
 
             -- Check for itemID (regular AtlasLoot items)
             if mouseFocus.itemID then
                 rawID = tostring(mouseFocus.itemID)
+
+                -- If itemID has 's' prefix (set/special item), prefer dressingroomID as the real item ID
+                if string.find(rawID, "^s%d+$") and mouseFocus.dressingroomID then
+                    itemID = tonumber(mouseFocus.dressingroomID)
+                    DebugLog("Item has 's' prefix, using dressingroomID: " .. tostring(itemID))
+                else
+                    -- Try direct conversion for regular numeric IDs
+                    itemID = tonumber(rawID)
+
+                    -- If that fails, extract from 's' prefix as fallback
+                    if not itemID then
+                        local _, _, numPart = string.find(rawID, "^s(%d+)$")
+                        if numPart then
+                            itemID = tonumber(numPart)
+                            DebugLog("Extracted item ID from 's' prefix: " .. itemID)
+                        end
+                    end
+                end
             -- Check for dressingroomID (container items like Tier Sets preview)
             elseif mouseFocus.dressingroomID then
-                rawID = tostring(mouseFocus.dressingroomID)
-                DebugLog("Found dressingroomID: " .. rawID)
+                itemID = tonumber(mouseFocus.dressingroomID)
+                DebugLog("Found dressingroomID: " .. tostring(itemID))
             end
 
-            if rawID then
-                local itemID = nil
+            if itemID then
+                -- Store the basic link format
+                lastHoveredItemLink = "item:" .. itemID .. ":0:0:0"
+                itemCaptured = true
 
-                -- Try direct conversion first (for regular numeric IDs)
-                itemID = tonumber(rawID)
+                -- Only log when item changes to avoid spam
+                if itemID ~= lastLoggedItemID then
+                    DebugLog("MouseFocus itemID: " .. itemID)
+                    DebugLog("  Frame name: " .. (mouseFocus:GetName() or "unnamed"))
+                    DebugLog("  Link: " .. lastHoveredItemLink)
+                    lastLoggedItemID = itemID
+                end
 
-                -- If that fails, check for 's' prefix (used in Tier Sets, Crafting, etc.)
-                if not itemID then
-                    local numPart = string.match(rawID, "^s(%d+)$")
-                    if numPart then
-                        itemID = tonumber(numPart)
-                        DebugLog("Extracted item ID from 's' prefix: " .. itemID)
+                -- Capture item name from AtlasLoot database or GetItemInfo
+                if mouseFocus.itemIDName then
+                    lastHoveredItemName = mouseFocus.itemIDName
+                else
+                    -- Try to get name from GetItemInfo for container items
+                    local itemName = GetItemInfo(itemID)
+                    if itemName then
+                        lastHoveredItemName = itemName
+                    else
+                        lastHoveredItemName = nil
                     end
                 end
 
-                -- Check if it's a valid item ID (not spell/enchant with 'e' prefix)
-                if itemID then
-                    -- Store the basic link format
-                    lastHoveredItemLink = "item:" .. itemID .. ":0:0:0"
-                    itemCaptured = true
-
-                    -- Only log when item changes to avoid spam
-                    if itemID ~= lastLoggedItemID then
-                        DebugLog("MouseFocus itemID: " .. itemID)
-                        DebugLog("  Frame name: " .. (mouseFocus:GetName() or "unnamed"))
-                        DebugLog("  Link: " .. lastHoveredItemLink)
-                        lastLoggedItemID = itemID
-                    end
-
-                    -- Capture item name from AtlasLoot database or GetItemInfo
-                    if mouseFocus.itemIDName then
-                        lastHoveredItemName = mouseFocus.itemIDName
-                    else
-                        -- Try to get name from GetItemInfo for container items
-                        local itemName = GetItemInfo(itemID)
-                        if itemName then
-                            lastHoveredItemName = itemName
-                        else
-                            lastHoveredItemName = nil
-                        end
-                    end
-
-                    -- Capture source information if available
-                    if AtlasLootItemsFrame and AtlasLootItemsFrame.refresh then
-                        local dataID = AtlasLootItemsFrame.refresh[1]
-                        local dataSource = AtlasLootItemsFrame.refresh[2]
-                        if dataID and dataSource then
-                            lastHoveredSourceInfo = dataID .. "|" .. dataSource
-                        end
+                -- Capture source information if available
+                if AtlasLootItemsFrame and AtlasLootItemsFrame.refresh then
+                    local dataID = AtlasLootItemsFrame.refresh[1]
+                    local dataSource = AtlasLootItemsFrame.refresh[2]
+                    if dataID and dataSource then
+                        lastHoveredSourceInfo = dataID .. "|" .. dataSource
                     end
                 end
             end
