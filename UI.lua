@@ -676,10 +676,21 @@ function BISListUI:CreateSourceItemFrame(parent, item, yOffset, width)
         -- Already proper link
         displayText = item.itemName
     else
-        -- Try cache
-        local itemName, properLink = GetItemInfo(item.itemId)
-        if properLink then
+        -- Try cache first for proper colored link
+        local cachedName, properLink, itemRarity = GetItemInfo(item.itemId)
+        -- Only use properLink if it's actually a colored link (contains |c or |H), not raw "item:xxx" format
+        if properLink and string.find(properLink, "|") then
             displayText = properLink
+        elseif item.itemName and item.itemName ~= "" and not string.find(item.itemName, "^item:") then
+            -- Plain text name - add rarity color if available
+            local colorCode = "|cffffffff" -- default white
+            if itemRarity then
+                local r, g, b = GetItemQualityColor(itemRarity)
+                if r then
+                    colorCode = string.format("|cff%02x%02x%02x", r * 255, g * 255, b * 255)
+                end
+            end
+            displayText = colorCode .. item.itemName .. "|r"
         else
             displayText = "|cff999999[Item " .. item.itemId .. "]|r"
         end
@@ -838,10 +849,21 @@ function BISListUI:CreateItemFrame(parent, slotId, item, yOffset, width)
         -- Already proper link
         displayText = item.itemName
     else
-        -- Try cache
-        local itemName, properLink = GetItemInfo(item.itemId)
-        if properLink then
+        -- Try cache first for proper colored link
+        local cachedName, properLink, itemRarity = GetItemInfo(item.itemId)
+        -- Only use properLink if it's actually a colored link (contains |c or |H), not raw "item:xxx" format
+        if properLink and string.find(properLink, "|") then
             displayText = properLink
+        elseif item.itemName and item.itemName ~= "" and not string.find(item.itemName, "^item:") then
+            -- Plain text name - add rarity color if available
+            local colorCode = "|cffffffff" -- default white
+            if itemRarity then
+                local r, g, b = GetItemQualityColor(itemRarity)
+                if r then
+                    colorCode = string.format("|cff%02x%02x%02x", r * 255, g * 255, b * 255)
+                end
+            end
+            displayText = colorCode .. item.itemName .. "|r"
         else
             displayText = "|cff999999[Item " .. item.itemId .. "]|r"
         end
