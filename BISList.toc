@@ -2,7 +2,7 @@
 ## Title: BISList
 ## Notes: Track your Best-in-Slot items with acquisition methods and auto-detection
 ## Author: YourName
-## Version: 1.0
+## Version: 1.1
 ## SavedVariables: BISListDB
 
 ItemDatabase.lua
