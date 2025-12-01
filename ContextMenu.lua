@@ -245,7 +245,7 @@ GameTooltip.SetHyperlink = function(self, link)
     end
 end
 
--- Hook ChatEdit_InsertLink to intercept Shift+Alt+Click
+-- Hook ChatEdit_InsertLink to intercept Shift+Alt+Click and fix raw item links
 local originalChatEdit_InsertLink = ChatEdit_InsertLink
 function ChatEdit_InsertLink(link)
     if IsAltKeyDown() and link and string.find(link, "item:") then
@@ -257,6 +257,26 @@ function ChatEdit_InsertLink(link)
             end
         end
         return
+    end
+
+    -- Fix raw item links (e.g., "item:12345:0:0:0") to proper hyperlink format
+    if link and string.find(link, "^item:%d+") and not string.find(link, "|H") then
+        local _, _, itemId = string.find(link, "item:(%d+)")
+        if itemId then
+            local itemName, _, itemRarity = GetItemInfo(tonumber(itemId))
+            local nameToUse = itemName or ("Item " .. itemId)
+
+            -- Get color based on rarity
+            local colorCode = "ffffffff" -- default white
+            if itemRarity then
+                local r, g, b = GetItemQualityColor(itemRarity)
+                if r then
+                    colorCode = string.format("ff%02x%02x%02x", r * 255, g * 255, b * 255)
+                end
+            end
+
+            link = "|c" .. colorCode .. "|Hitem:" .. itemId .. ":0:0:0|h[" .. nameToUse .. "]|h|r"
+        end
     end
 
     -- Only call original if it exists

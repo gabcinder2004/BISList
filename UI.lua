@@ -702,25 +702,62 @@ function BISListUI:CreateSourceItemFrame(parent, item, yOffset, width)
     itemLink:SetJustifyH("LEFT")
     itemLink:SetText(displayText)
 
-    -- Make item link clickable
+    -- Make item link clickable - store the proper link for this item
     local linkButton = CreateFrame("Button", nil, itemFrame)
     linkButton:SetPoint("LEFT", slotText, "RIGHT", 5, 0)
     linkButton:SetWidth(itemLinkWidth)
     linkButton:SetHeight(18)
+
+    -- Pre-compute the proper link to use for this item
+    local _, _, extractedItemId = string.find(item.itemLink, "item:(%d+)")
+
+    -- Helper function to build a proper hyperlink
+    local function BuildProperLink(itemId)
+        local itemName, _, itemRarity = GetItemInfo(tonumber(itemId))
+        local nameToUse = itemName
+        if not nameToUse or nameToUse == "" then
+            nameToUse = item.itemName
+            if nameToUse then
+                -- Strip any existing color codes from stored name
+                nameToUse = string.gsub(nameToUse, "|c%x%x%x%x%x%x%x%x", "")
+                nameToUse = string.gsub(nameToUse, "|r", "")
+            end
+        end
+        if not nameToUse or nameToUse == "" or string.find(nameToUse, "^item:") then
+            nameToUse = "Item " .. itemId
+        end
+
+        -- Get color based on rarity
+        local colorCode = "ffffffff" -- default white
+        if itemRarity then
+            local r, g, b = GetItemQualityColor(itemRarity)
+            if r then
+                colorCode = string.format("ff%02x%02x%02x", r * 255, g * 255, b * 255)
+            end
+        end
+
+        return "|c" .. colorCode .. "|Hitem:" .. itemId .. ":0:0:0|h[" .. nameToUse .. "]|h|r"
+    end
+
     linkButton:SetScript("OnClick", function()
         if IsShiftKeyDown() then
-            ChatFrameEditBox:Insert(item.itemLink)
+            if ChatFrameEditBox and ChatFrameEditBox:IsVisible() and extractedItemId then
+                local properLink = BuildProperLink(extractedItemId)
+                ChatFrameEditBox:Insert(properLink)
+            end
         end
     end)
     linkButton:SetScript("OnEnter", function()
         GameTooltip:SetOwner(linkButton, "ANCHOR_RIGHT")
-        local _, _, itemId = string.find(item.itemLink, "item:(%d+)")
-        if itemId then
-            local itemName, properLink = GetItemInfo(tonumber(itemId))
-            if properLink then
-                GameTooltip:SetHyperlink(properLink)
+        if extractedItemId then
+            -- Always try to get fresh cached link for tooltip
+            local _, freshLink = GetItemInfo(tonumber(extractedItemId))
+            if freshLink then
+                -- Use the properly formatted link - this ensures shift-click from tooltip also works
+                GameTooltip:SetHyperlink(freshLink)
             else
-                GameTooltip:SetHyperlink("item:"..itemId..":0:0:0")
+                -- Fallback: use raw format but tooltip shift-click may not work perfectly
+                GameTooltip:SetHyperlink("item:" .. extractedItemId .. ":0:0:0")
             end
         end
         GameTooltip:Show()
@@ -880,21 +917,50 @@ function BISListUI:CreateItemFrame(parent, slotId, item, yOffset, width)
     linkButton:SetPoint("LEFT", checkbox, "RIGHT", 5, 0)
     linkButton:SetWidth(itemLinkWidth)
     linkButton:SetHeight(18)
+
+    -- Pre-compute the proper link to use for this item
+    local _, _, extractedItemId = string.find(item.itemLink, "item:(%d+)")
+
+    -- Helper function to build a proper hyperlink
+    local function BuildProperLink(itemId)
+        local itemName, _, itemRarity = GetItemInfo(tonumber(itemId))
+        local nameToUse = itemName
+        if not nameToUse or nameToUse == "" then
+            nameToUse = item.itemName
+            if nameToUse then
+                -- Strip any existing color codes from stored name
+                nameToUse = string.gsub(nameToUse, "|c%x%x%x%x%x%x%x%x", "")
+                nameToUse = string.gsub(nameToUse, "|r", "")
+            end
+        end
+        if not nameToUse or nameToUse == "" or string.find(nameToUse, "^item:") then
+            nameToUse = "Item " .. itemId
+        end
+
+        -- Get color based on rarity
+        local colorCode = "ffffffff" -- default white
+        if itemRarity then
+            local r, g, b = GetItemQualityColor(itemRarity)
+            if r then
+                colorCode = string.format("ff%02x%02x%02x", r * 255, g * 255, b * 255)
+            end
+        end
+
+        return "|c" .. colorCode .. "|Hitem:" .. itemId .. ":0:0:0|h[" .. nameToUse .. "]|h|r"
+    end
+
     linkButton:SetScript("OnClick", function()
         if IsShiftKeyDown() then
-            ChatFrameEditBox:Insert(item.itemLink)
+            if ChatFrameEditBox and ChatFrameEditBox:IsVisible() and extractedItemId then
+                local properLink = BuildProperLink(extractedItemId)
+                ChatFrameEditBox:Insert(properLink)
+            end
         end
     end)
     linkButton:SetScript("OnEnter", function()
         GameTooltip:SetOwner(linkButton, "ANCHOR_RIGHT")
-        local _, _, itemId = string.find(item.itemLink, "item:(%d+)")
-        if itemId then
-            local itemName, properLink = GetItemInfo(tonumber(itemId))
-            if properLink then
-                GameTooltip:SetHyperlink(properLink)
-            else
-                GameTooltip:SetHyperlink("item:"..itemId..":0:0:0")
-            end
+        if extractedItemId then
+            GameTooltip:SetHyperlink("item:" .. extractedItemId .. ":0:0:0")
         end
         GameTooltip:Show()
     end)
