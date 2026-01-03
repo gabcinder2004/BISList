@@ -467,7 +467,18 @@ function BISListUI:BuildContentBySlot()
         maxHeight = 200
     end
 
-    scrollChild:SetHeight(maxHeight + 20)
+    local contentHeight = maxHeight + 20
+    scrollChild:SetHeight(contentHeight)
+
+    -- Force update scroll bar range (vanilla WoW doesn't always recalculate this)
+    local scrollFrame = getglobal("BISListScrollFrame")
+    local scrollBar = getglobal("BISListScrollFrameScrollBar")
+    if scrollFrame and scrollBar then
+        local visibleHeight = scrollFrame:GetHeight()
+        local maxScroll = contentHeight - visibleHeight
+        if maxScroll < 0 then maxScroll = 0 end
+        scrollBar:SetMinMaxValues(0, maxScroll)
+    end
 end
 
 -- Lookup itemID in embedded item database (fallback when sourceInfo is nil)
@@ -587,7 +598,18 @@ function BISListUI:BuildContentBySource()
     end
 
     -- Ensure scroll height is sufficient (minimum 500 to enable scrolling)
-    scrollChild:SetHeight(math.max(maxHeight + 20, 500))
+    local contentHeight = math.max(maxHeight + 20, 500)
+    scrollChild:SetHeight(contentHeight)
+
+    -- Force update scroll bar range (vanilla WoW doesn't always recalculate this)
+    local scrollFrame = getglobal("BISListScrollFrame")
+    local scrollBar = getglobal("BISListScrollFrameScrollBar")
+    if scrollFrame and scrollBar then
+        local visibleHeight = scrollFrame:GetHeight()
+        local maxScroll = contentHeight - visibleHeight
+        if maxScroll < 0 then maxScroll = 0 end
+        scrollBar:SetMinMaxValues(0, maxScroll)
+    end
 end
 
 -- Create a frame for one source group (dungeon/raid)
@@ -1395,7 +1417,18 @@ function BISListUI:ShowManageView()
 
     -- Set scroll height to accommodate all content
     local totalHeight = math.abs(yOffset) + 50
-    scrollChild:SetHeight(math.max(totalHeight, 400))
+    local contentHeight = math.max(totalHeight, 400)
+    scrollChild:SetHeight(contentHeight)
+
+    -- Force update scroll bar range (vanilla WoW doesn't always recalculate this)
+    local scrollFrame = getglobal("BISListScrollFrame")
+    local scrollBar = getglobal("BISListScrollFrameScrollBar")
+    if scrollFrame and scrollBar then
+        local visibleHeight = scrollFrame:GetHeight()
+        local maxScroll = contentHeight - visibleHeight
+        if maxScroll < 0 then maxScroll = 0 end
+        scrollBar:SetMinMaxValues(0, maxScroll)
+    end
 end
 
 -- Initialize UI on load (removed auto-creation, now only created when needed)
